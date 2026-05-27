@@ -31,6 +31,8 @@
   --orange: #ff9f0a;
   --yellow: #ffd166;
   --soft-blue: rgba(10, 132, 255, 0.11);
+  --mission-accent: var(--blue);
+  --mission-accent-soft: rgba(10, 132, 255, 0.12);
   --shadow: 0 18px 54px rgba(15, 23, 42, 0.12);
   --inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.92);
   --glass-border: rgba(255, 255, 255, 0.52);
@@ -55,9 +57,35 @@ body.dark {
   --orange: #ffc46b;
   --yellow: #ffd166;
   --soft-blue: rgba(119, 164, 255, 0.18);
+  --mission-accent: var(--blue);
+  --mission-accent-soft: rgba(119, 164, 255, 0.18);
   --shadow: 0 20px 70px rgba(0, 0, 0, 0.38);
   --inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.13);
   --glass-border: rgba(255, 255, 255, 0.14);
+}
+
+body[data-accent="training"] {
+  --mission-accent: var(--green);
+  --mission-accent-soft: rgba(32, 201, 151, 0.14);
+}
+
+body[data-accent="reading"] {
+  --mission-accent: var(--blue);
+  --mission-accent-soft: rgba(10, 132, 255, 0.13);
+}
+
+body[data-accent="focus"] {
+  --mission-accent: var(--purple);
+  --mission-accent-soft: rgba(175, 82, 222, 0.13);
+}
+
+body[data-accent="saving"] {
+  --mission-accent: var(--orange);
+  --mission-accent-soft: rgba(255, 159, 10, 0.16);
+}
+
+body:not(.timer-countdown) .countdown-options {
+  display: none;
 }
 
 * {
@@ -125,6 +153,17 @@ button {
   justify-content: space-between;
   gap: 16px;
   padding: 26px 2px 32px;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.language-select {
+  width: auto;
+  min-width: 116px;
 }
 
 .eyebrow {
@@ -241,6 +280,14 @@ h2 {
   text-shadow: 0 18px 42px rgba(10, 132, 255, 0.14);
 }
 
+.counter-value.count-pop-plus {
+  animation: countPopPlus 210ms ease-out;
+}
+
+.counter-value.count-pop-minus {
+  animation: countPopMinus 210ms ease-out;
+}
+
 .counter-sub {
   min-height: 1.5em;
   margin: 12px 0 12px;
@@ -252,6 +299,7 @@ h2 {
 }
 
 .progress-track {
+  position: relative;
   height: 12px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -265,12 +313,25 @@ body.dark .progress-track {
 }
 
 .progress-fill {
+  position: relative;
   width: 0%;
   height: 100%;
   border-radius: 8px;
   background: linear-gradient(90deg, var(--green), var(--cyan), var(--blue), var(--purple), var(--pink));
   box-shadow: 0 0 28px rgba(10, 132, 255, 0.34);
   transition: width 220ms ease;
+}
+
+.progress-fill::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+  transform: translateX(-120%);
+}
+
+.progress-fill.progress-sheen::after {
+  animation: progressSheen 520ms ease-out;
 }
 
 .progress-text {
@@ -310,6 +371,43 @@ body.dark .progress-track {
   margin-bottom: 18px;
 }
 
+.floating-timer {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(124px + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: none;
+  min-width: 132px;
+  padding: 10px 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.68)),
+    var(--panel-strong);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.2), var(--inner-light);
+  color: var(--text);
+  text-align: center;
+  backdrop-filter: blur(20px) saturate(1.32);
+}
+
+body.timer-active .floating-timer {
+  display: block;
+}
+
+.floating-timer span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.floating-timer output {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 950;
+  line-height: 1.1;
+}
+
 .inline-reset-button,
 .undo-button {
   min-height: 42px;
@@ -342,11 +440,11 @@ body.dark .undo-button {
 }
 
 .action-button {
-  min-height: 86px;
+  min-height: 108px;
   border-radius: 8px;
   color: white;
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.22);
-  font-size: clamp(1.1rem, 5vw, 1.5rem);
+  font-size: clamp(1.18rem, 5vw, 1.62rem);
   font-weight: 800;
   box-shadow: 0 20px 52px rgba(18, 24, 38, 0.22), var(--inner-light);
   transition:
@@ -357,7 +455,8 @@ body.dark .undo-button {
 
 .action-button span {
   display: block;
-  font-size: 2.1rem;
+  margin-bottom: 4px;
+  font-size: 2.7rem;
   line-height: 1;
 }
 
@@ -445,6 +544,36 @@ body.dark .history-actions button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin-top: 14px;
+}
+
+.advanced-shell {
+  margin-top: 14px;
+}
+
+.advanced-shell > summary {
+  display: block;
+  padding: 16px 18px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.64)),
+    var(--panel-strong);
+  box-shadow: var(--shadow), var(--inner-light);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.advanced-shell > summary::after {
+  float: right;
+  content: "+";
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.advanced-shell[open] > summary::after {
+  content: "-";
 }
 
 .tool-panel,
@@ -562,6 +691,91 @@ select {
   line-height: 1;
 }
 
+.mission-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, var(--mission-accent-soft), rgba(255, 45, 146, 0.07)),
+    rgba(255, 255, 255, 0.78);
+  box-shadow: var(--inner-light);
+}
+
+.mission-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mission-top strong {
+  font-size: 1.05rem;
+}
+
+.mission-badge {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--mission-accent-soft);
+  color: var(--mission-accent);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.mission-detail {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.mini-graph {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(18px, 1fr));
+  align-items: end;
+  min-height: 96px;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.mini-graph-item {
+  display: grid;
+  align-items: end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mini-graph-bar {
+  display: block;
+  min-height: 8px;
+  border-radius: 8px 8px 4px 4px;
+  background: linear-gradient(180deg, var(--cyan), var(--mission-accent), var(--purple));
+  box-shadow: 0 10px 24px rgba(10, 132, 255, 0.22);
+}
+
+.mini-graph-label {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+.empty-graph {
+  grid-column: 1 / -1;
+  align-self: center;
+  color: var(--muted);
+  font-weight: 700;
+  text-align: center;
+}
+
 .history-panel {
   margin-top: 14px;
 }
@@ -613,13 +827,97 @@ select {
   font-weight: 900;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--mission-accent) 72%, white);
+  outline-offset: 3px;
+}
+
 body.dark input,
 body.dark textarea,
 body.dark select,
 body.dark .counter-stats span,
 body.dark .stat-grid div,
-body.dark .history-list li {
+body.dark .history-list li,
+body.dark .mission-card {
   background: rgba(24, 34, 52, 0.74);
+}
+
+.counter-panel.milestone-ring::after {
+  position: absolute;
+  inset: 22px;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  border: 2px solid rgba(10, 132, 255, 0.36);
+  border-radius: 8px;
+  animation: milestoneRing 760ms ease-out;
+}
+
+@keyframes countPopPlus {
+  0% {
+    transform: scale(1);
+    color: var(--text);
+  }
+  45% {
+    transform: scale(1.035);
+    color: var(--blue);
+    text-shadow: 0 0 34px rgba(90, 200, 250, 0.35);
+  }
+  100% {
+    transform: scale(1);
+    color: var(--text);
+  }
+}
+
+@keyframes countPopMinus {
+  0% {
+    transform: scale(1);
+    color: var(--text);
+  }
+  45% {
+    transform: scale(0.982);
+    color: var(--red);
+    text-shadow: 0 0 30px rgba(255, 107, 107, 0.28);
+  }
+  100% {
+    transform: scale(1);
+    color: var(--text);
+  }
+}
+
+@keyframes progressSheen {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes milestoneRing {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 @media (max-width: 720px) {
@@ -634,15 +932,29 @@ body.dark .history-list li {
 
   .main-actions {
     position: sticky;
-    bottom: 12px;
-    z-index: 10;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    z-index: 20;
     grid-template-columns: 1fr 1fr;
-    padding: 8px;
+    gap: 10px;
+    padding: 10px;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: color-mix(in srgb, var(--panel) 92%, transparent);
     box-shadow: var(--shadow);
     backdrop-filter: blur(14px);
+  }
+
+  .action-button {
+    min-height: 104px;
+    font-size: 1.12rem;
+  }
+
+  .action-button span {
+    font-size: 3rem;
+  }
+
+  body.timer-active .main-actions {
+    padding-top: 12px;
   }
 
   .quick-actions {
@@ -664,6 +976,16 @@ body.dark .history-list li {
     align-items: stretch;
     flex-direction: column;
   }
+
+  .preset-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 721px) {
+  .floating-timer {
+    bottom: 24px;
+  }
 }
 
     </style>
@@ -675,9 +997,15 @@ body.dark .history-list li {
           <p class="eyebrow">Counter + Timer</p>
           <h1 id="app-title">数字カウント</h1>
         </div>
-        <button class="icon-button" id="themeButton" type="button" aria-label="色テーマを切り替える">
-          <span aria-hidden="true">◐</span>
-        </button>
+        <div class="hero-actions">
+          <select class="language-select" id="languageSelect" aria-label="アプリ内言語">
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+          </select>
+          <button class="icon-button" id="themeButton" type="button" aria-label="色テーマを切り替える">
+            <span aria-hidden="true">◐</span>
+          </button>
+        </div>
       </section>
 
       <section class="counter-panel" aria-label="現在のカウント">
@@ -721,6 +1049,58 @@ body.dark .history-list li {
         </div>
       </section>
 
+      <div class="floating-timer" aria-live="polite">
+        <span id="floatingTimerLabel">タイマー</span>
+        <output id="floatingTimeValue">00:00.0</output>
+      </div>
+
+      <section class="grid">
+        <article class="tool-panel timer-panel">
+          <h2>タイマー</h2>
+          <output class="time-value" id="timeValue">00:00.0</output>
+          <label class="field">
+            <span>タイマーの種類</span>
+            <select id="timerModeSelect">
+              <option value="stopwatch">時間を測る</option>
+              <option value="countdown">カウントダウン</option>
+            </select>
+          </label>
+          <div class="countdown-options">
+            <div class="mini-actions" aria-label="カウントダウン時間">
+              <label class="field">
+                <span>分</span>
+                <input id="countdownMinutesInput" type="number" min="0" max="999" value="5" inputmode="numeric" />
+              </label>
+              <label class="field">
+                <span>秒</span>
+                <input id="countdownSecondsInput" type="number" min="0" max="59" value="0" inputmode="numeric" />
+              </label>
+            </div>
+            <div class="quick-actions" aria-label="よく使うカウントダウン時間">
+              <button type="button" data-countdown-preset="60">1分</button>
+              <button type="button" data-countdown-preset="180">3分</button>
+              <button type="button" data-countdown-preset="300">5分</button>
+              <button type="button" data-countdown-preset="600">10分</button>
+            </div>
+          </div>
+          <div class="mini-actions">
+            <button id="timerToggleButton" type="button">開始</button>
+            <button id="lapButton" type="button">記録</button>
+            <button id="timerResetButton" type="button">リセット</button>
+          </div>
+          <label class="toggle-row">
+            <input id="autoCountToggle" type="checkbox" />
+            <span>タイマー中に自動でカウントする</span>
+          </label>
+          <label class="toggle-row">
+            <input id="stopAutoWithTimerToggle" type="checkbox" checked />
+            <span>タイマー停止で自動も止める</span>
+          </label>
+        </article>
+      </section>
+
+      <details class="advanced-shell">
+        <summary>細かい設定・記録を開く</summary>
       <section class="grid">
         <article class="tool-panel">
           <h2>カウント設定</h2>
@@ -770,21 +1150,20 @@ body.dark .history-list li {
         </article>
 
         <article class="tool-panel">
-          <h2>タイマー</h2>
-          <output class="time-value" id="timeValue">00:00.0</output>
-          <div class="mini-actions">
-            <button id="timerToggleButton" type="button">開始</button>
-            <button id="lapButton" type="button">記録</button>
-            <button id="timerResetButton" type="button">リセット</button>
+          <h2>使い方プリセット</h2>
+          <div class="preset-grid">
+            <label class="field">
+              <span>何に使うか</span>
+              <select id="presetSelect">
+                <option value="training">運動</option>
+                <option value="reading">読書</option>
+                <option value="focus">集中作業</option>
+                <option value="saving">貯金</option>
+              </select>
+            </label>
+            <button class="wide-button" id="applyPresetButton" type="button">反映</button>
           </div>
-          <label class="toggle-row">
-            <input id="autoCountToggle" type="checkbox" />
-            <span>タイマー中に自動でカウントする</span>
-          </label>
-          <label class="toggle-row">
-            <input id="stopAutoWithTimerToggle" type="checkbox" checked />
-            <span>タイマー停止で自動も止める</span>
-          </label>
+          <p class="small-note">名前、1回の数、目標、メモをまとめて入れます。</p>
         </article>
 
         <article class="tool-panel">
@@ -802,6 +1181,12 @@ body.dark .history-list li {
 
         <article class="tool-panel">
           <h2>メモ</h2>
+          <div class="quick-actions" aria-label="よく使うメモ">
+            <button type="button" data-memo-preset="training">運動</button>
+            <button type="button" data-memo-preset="reading">読書</button>
+            <button type="button" data-memo-preset="focus">作業</button>
+            <button type="button" data-memo-preset="saving">貯金</button>
+          </div>
           <textarea id="memoInput" rows="5" placeholder="例：腕立て、読書ページ数、作業回数など"></textarea>
         </article>
 
@@ -817,6 +1202,23 @@ body.dark .history-list li {
               <strong id="todayHighValue">0</strong>
             </div>
           </div>
+          <button class="wide-button" id="todayResetButton" type="button">今日だけリセット</button>
+        </article>
+
+        <article class="tool-panel">
+          <h2>今日のミッション</h2>
+          <div class="mission-card" id="missionCard">
+            <div class="mission-top">
+              <strong id="missionTitle">カウンター</strong>
+              <span class="mission-badge" id="missionBadge">あと10</span>
+            </div>
+            <p class="mission-detail" id="missionDetail">目標に向けてカウントできます。</p>
+          </div>
+        </article>
+
+        <article class="tool-panel">
+          <h2>最近の動き</h2>
+          <div class="mini-graph" id="miniGraph" aria-label="最近のカウント履歴"></div>
         </article>
 
         <article class="tool-panel">
@@ -843,10 +1245,12 @@ body.dark .history-list li {
         </div>
         <ol id="historyList" class="history-list"></ol>
       </section>
+      </details>
     </main>
     <script>
 const countValue = document.querySelector("#countValue");
 const statusText = document.querySelector("#statusText");
+const counterPanel = document.querySelector(".counter-panel");
 const plusButton = document.querySelector("#plusButton");
 const minusButton = document.querySelector("#minusButton");
 const inlineResetButton = document.querySelector("#inlineResetButton");
@@ -873,6 +1277,11 @@ const timerToggleButton = document.querySelector("#timerToggleButton");
 const timerResetButton = document.querySelector("#timerResetButton");
 const lapButton = document.querySelector("#lapButton");
 const timeValue = document.querySelector("#timeValue");
+const floatingTimerLabel = document.querySelector("#floatingTimerLabel");
+const floatingTimeValue = document.querySelector("#floatingTimeValue");
+const timerModeSelect = document.querySelector("#timerModeSelect");
+const countdownMinutesInput = document.querySelector("#countdownMinutesInput");
+const countdownSecondsInput = document.querySelector("#countdownSecondsInput");
 const autoCountToggle = document.querySelector("#autoCountToggle");
 const stopAutoWithTimerToggle = document.querySelector("#stopAutoWithTimerToggle");
 const intervalInput = document.querySelector("#intervalInput");
@@ -880,18 +1289,484 @@ const autoPlusButton = document.querySelector("#autoPlusButton");
 const autoMinusButton = document.querySelector("#autoMinusButton");
 const autoToggleButton = document.querySelector("#autoToggleButton");
 const memoInput = document.querySelector("#memoInput");
+const presetSelect = document.querySelector("#presetSelect");
+const applyPresetButton = document.querySelector("#applyPresetButton");
+const missionTitle = document.querySelector("#missionTitle");
+const missionBadge = document.querySelector("#missionBadge");
+const missionDetail = document.querySelector("#missionDetail");
+const miniGraph = document.querySelector("#miniGraph");
 const todayTotalValue = document.querySelector("#todayTotalValue");
 const todayHighValue = document.querySelector("#todayHighValue");
+const todayResetButton = document.querySelector("#todayResetButton");
 const soundToggle = document.querySelector("#soundToggle");
 const vibrateToggle = document.querySelector("#vibrateToggle");
+const languageSelect = document.querySelector("#languageSelect");
 const themeButton = document.querySelector("#themeButton");
 const historyList = document.querySelector("#historyList");
 const exportCsvButton = document.querySelector("#exportCsvButton");
 const clearHistoryButton = document.querySelector("#clearHistoryButton");
 const quickButtons = document.querySelectorAll("[data-quick]");
+const countdownPresetButtons = document.querySelectorAll("[data-countdown-preset]");
+const memoPresetButtons = document.querySelectorAll("[data-memo-preset]");
 
 const storageKey = "simple-counter-app";
 let audioContext = null;
+let lastEffectAt = 0;
+let countdownWarned = false;
+
+const presets = {
+  training: {
+    name: "運動",
+    accent: "training",
+    step: "1",
+    target: "30",
+    limit: "300",
+    memo: "回数",
+  },
+  reading: {
+    name: "読書",
+    accent: "reading",
+    step: "1",
+    target: "30",
+    limit: "500",
+    memo: "ページ数",
+  },
+  focus: {
+    name: "集中作業",
+    accent: "focus",
+    step: "5",
+    target: "60",
+    limit: "240",
+    memo: "分",
+  },
+  saving: {
+    name: "貯金",
+    accent: "saving",
+    step: "100",
+    target: "1000",
+    limit: "100000",
+    memo: "円",
+  },
+};
+
+const i18n = {
+  ja: {
+    title: "数字カウント",
+    currentNumber: "現在の数字",
+    initialStatus: "プラス・マイナスで数字を動かせます",
+    reset: "0に戻す",
+    undo: "戻す",
+    minus: "減らす",
+    plus: "増やす",
+    quickActionsLabel: "よく使う操作",
+    advanced: "細かい設定・記録を開く",
+    counterSettings: "カウント設定",
+    counterName: "カウント名",
+    counterSelect: "使うカウンター",
+    add: "追加",
+    delete: "削除",
+    countMode: "カウントモード",
+    countUp: "増やして目標へ",
+    countDown: "減らして0へ",
+    stepLabel: "1回で増減する数",
+    targetNumber: "目標の数字",
+    limitNumber: "カウント上限",
+    limitBehavior: "上限に来たとき",
+    noLimit: "上限なし",
+    stopAtLimit: "上限で止める",
+    loopToZero: "0に戻る",
+    setToTarget: "目標まで増やす",
+    setStart: "開始値にする",
+    presets: "使い方プリセット",
+    presetUse: "何に使うか",
+    presetTraining: "運動",
+    presetReading: "読書",
+    presetFocus: "集中作業",
+    presetSaving: "貯金",
+    memoTraining: "回数",
+    memoReading: "ページ数",
+    memoFocus: "分",
+    memoSaving: "円",
+    presetHelp: "名前、1回の数、目標、メモをまとめて入れます。",
+    timer: "タイマー",
+    floatingTimer: "タイマー",
+    timerType: "タイマーの種類",
+    stopwatch: "時間を測る",
+    countdown: "カウントダウン",
+    minutes: "分",
+    seconds: "秒",
+    oneMinute: "1分",
+    threeMinutes: "3分",
+    fiveMinutes: "5分",
+    tenMinutes: "10分",
+    startTimer: "タイマー開始",
+    startCountdown: "カウントダウン開始",
+    stop: "停止",
+    lap: "記録",
+    timerReset: "リセット",
+    autoWithTimer: "タイマー中に自動でカウントする",
+    stopAutoWithTimer: "タイマー停止で自動も止める",
+    autoCount: "自動カウント",
+    intervalLabel: "何秒ごとに動かすか",
+    autoPlus: "増やす",
+    autoMinus: "減らす",
+    autoStart: "自動カウント開始",
+    autoStop: "自動カウント停止",
+    memo: "メモ",
+    memoPlaceholder: "例：腕立て、読書ページ数、作業回数など",
+    memoChipTraining: "運動",
+    memoChipReading: "読書",
+    memoChipFocus: "作業",
+    memoChipSaving: "貯金",
+    memoPresetSet: "メモを「{memo}」にしました",
+    today: "今日の記録",
+    total: "合計",
+    high: "最高",
+    resetToday: "今日だけリセット",
+    mission: "今日のミッション",
+    recent: "最近の動き",
+    emptyGraph: "まだ記録がありません",
+    notify: "通知と操作",
+    sound: "達成時に音を鳴らす",
+    vibrate: "スマホで振動させる",
+    shortcutNote: "キーボードでは + / - / 0 / U が使えます。",
+    history: "記録",
+    exportCsv: "CSV",
+    clearHistory: "記録を消す",
+    apply: "反映",
+    timerDone: "カウントダウンが終わりました",
+    countdownWarn: "カウントダウン、あと3秒です",
+    targetProgress: "目標まであと{value}",
+    zeroProgress: "0まであと {value}",
+    zeroReached: "0に届いています",
+    targetReachedShort: "目標に届いています",
+    stepStat: "ステップ {value}",
+    targetStat: "目標 {value}",
+    startStat: "開始 {value}",
+    remainingStat: "残り {value}",
+    achieved: "達成済み",
+    achievedBadge: "達成",
+    limitStat: "上限 {value}",
+    missionDone: "{name} は今日の目標に届いています。",
+    missionDetail: "{memo}を {target} まで進めます。あと {remaining} です。",
+    number: "数字",
+    saveFailed: "保存できませんでした。ブラウザの容量や設定を確認してください。",
+    saveReloaded: "保存データを読み直しました。もう一度ボタンを押してください。",
+    deleteHistoryLabel: "この記録を消す",
+    targetReached: "目標の {target} に到達しました",
+    targetHistory: "目標達成 {target} / 数字 {count}{memo}",
+    zeroComplete: "0に到達しました",
+    countdownCountComplete: "カウントダウン完了 / 数字 0{memo}",
+    autoStopZero: "0に到達したので自動カウント停止",
+    alreadyLimit: "すでに上限の {limit} です",
+    limitStopped: "上限の {limit} で止まりました",
+    limitReachedHistory: "上限 {limit} に到達 / 数字 {count}{memo}",
+    autoStopLimit: "上限に到達したので自動カウント停止",
+    limitLoop: "上限の {limit} を超えたので0に戻りました",
+    limitLoopHistory: "上限 {limit} を超えて0に戻りました{memo}",
+    resetDone: "数字を0に戻しました",
+    undoDone: "数字を {count} に戻しました",
+    timerStartHistory: "タイマー開始",
+    countdownStartHistory: "カウントダウン開始 {time}",
+    timerStopHistory: "タイマー停止 {time}",
+    countdownStopHistory: "カウントダウン停止 {time}",
+    countdownDoneHistory: "カウントダウン完了 {time} / 数字 {count}{memo}",
+    timerStopAuto: "タイマー停止で自動カウントも停止",
+    autoCounting: "自動カウント中です",
+    autoStartHistory: "自動カウント開始 {seconds}秒ごと",
+    startFromTarget: "{target} からカウントダウンします",
+    targetSet: "目標の {target} に合わせました",
+    presetApplied: "{name} 用の設定を入れました",
+    presetHistory: "{name} プリセットを反映しました",
+    holdCounting: "長押しでカウント中です",
+    plusDone: "{step} 増やしました",
+    minusDone: "{step} 減らしました",
+    quickDone: "{amount} まとめて動かしました",
+    targetAlready: "目標の {target} に到達済みです",
+    targetAlreadyHistory: "目標の {target} に到達済み / 数字 {count}{memo}",
+    timerResetAuto: "タイマーリセットで自動カウントも停止",
+    countdownReset: "カウントダウンをリセット",
+    timerResetHistory: "タイマーをリセット",
+    lapRunning: "記録",
+    lapStopped: "停止中の記録",
+    lapHistory: "{status} {time} / 数字 {count}{memo}",
+    countdownPresetSet: "{minutes}分{seconds}秒のカウントダウンにしました",
+    addCounterAutoStop: "カウンター追加のため自動カウント停止",
+    counterDefault: "カウンター",
+    counterAdded: "新しいカウンターを追加しました",
+    deleteCounterAutoStop: "カウンター削除のため自動カウント停止",
+    counterDeleted: "カウンターを削除しました",
+    switchCounterAutoStop: "カウンター切り替えのため自動カウント停止",
+    counterSwitched: "カウンターを切り替えました",
+    todayResetDone: "今日の合計と最高をリセットしました",
+  },
+  en: {
+    title: "Counter",
+    currentNumber: "Current Number",
+    initialStatus: "Use plus and minus to change the number",
+    reset: "Reset to 0",
+    undo: "Undo",
+    minus: "Decrease",
+    plus: "Increase",
+    quickActionsLabel: "Quick Actions",
+    advanced: "Open Settings and History",
+    counterSettings: "Counter Settings",
+    counterName: "Counter Name",
+    counterSelect: "Counter",
+    add: "Add",
+    delete: "Delete",
+    countMode: "Count Mode",
+    countUp: "Count up to target",
+    countDown: "Count down to zero",
+    stepLabel: "Step",
+    targetNumber: "Target Number",
+    limitNumber: "Count Limit",
+    limitBehavior: "At Limit",
+    noLimit: "No limit",
+    stopAtLimit: "Stop at limit",
+    loopToZero: "Loop to 0",
+    setToTarget: "Set to Target",
+    setStart: "Set Start",
+    presets: "Use Preset",
+    presetUse: "Use for",
+    presetTraining: "Training",
+    presetReading: "Reading",
+    presetFocus: "Focus Work",
+    presetSaving: "Saving",
+    memoTraining: "reps",
+    memoReading: "pages",
+    memoFocus: "minutes",
+    memoSaving: "yen",
+    presetHelp: "Fill name, step, target, and memo at once.",
+    timer: "Timer",
+    floatingTimer: "Timer",
+    timerType: "Timer Type",
+    stopwatch: "Stopwatch",
+    countdown: "Countdown",
+    minutes: "Min",
+    seconds: "Sec",
+    oneMinute: "1 min",
+    threeMinutes: "3 min",
+    fiveMinutes: "5 min",
+    tenMinutes: "10 min",
+    startTimer: "Start Timer",
+    startCountdown: "Start Countdown",
+    stop: "Stop",
+    lap: "Lap",
+    timerReset: "Reset",
+    autoWithTimer: "Auto count while timer is running",
+    stopAutoWithTimer: "Stop auto count with timer",
+    autoCount: "Auto Count",
+    intervalLabel: "Move every",
+    autoPlus: "Increase",
+    autoMinus: "Decrease",
+    autoStart: "Start Auto Count",
+    autoStop: "Stop Auto Count",
+    memo: "Memo",
+    memoPlaceholder: "Example: push-ups, reading pages, work count",
+    memoChipTraining: "Training",
+    memoChipReading: "Reading",
+    memoChipFocus: "Work",
+    memoChipSaving: "Saving",
+    memoPresetSet: "Memo set to \"{memo}\"",
+    today: "Today",
+    total: "Total",
+    high: "High",
+    resetToday: "Reset Today",
+    mission: "Today's Mission",
+    recent: "Recent Movement",
+    emptyGraph: "No records yet",
+    notify: "Notifications and Controls",
+    sound: "Play sound on achievement",
+    vibrate: "Vibrate on phone",
+    shortcutNote: "Keyboard shortcuts: + / - / 0 / U",
+    history: "History",
+    exportCsv: "CSV",
+    clearHistory: "Clear History",
+    apply: "Apply",
+    timerDone: "Countdown finished",
+    countdownWarn: "Countdown: 3 seconds left",
+    targetProgress: "{value} to target",
+    zeroProgress: "{value} to zero",
+    zeroReached: "Reached 0",
+    targetReachedShort: "Target reached",
+    stepStat: "Step {value}",
+    targetStat: "Target {value}",
+    startStat: "Start {value}",
+    remainingStat: "{value} left",
+    achieved: "Done",
+    achievedBadge: "Done",
+    limitStat: "Limit {value}",
+    missionDone: "{name} reached today's target.",
+    missionDetail: "Move {memo} to {target}. {remaining} left.",
+    number: "number",
+    saveFailed: "Could not save. Check browser storage or settings.",
+    saveReloaded: "Saved data was reset. Please try again.",
+    deleteHistoryLabel: "Delete this record",
+    targetReached: "Reached target {target}",
+    targetHistory: "Target reached {target} / count {count}{memo}",
+    zeroComplete: "Reached 0",
+    countdownCountComplete: "Countdown complete / count 0{memo}",
+    autoStopZero: "Auto count stopped because 0 was reached",
+    alreadyLimit: "Already at limit {limit}",
+    limitStopped: "Stopped at limit {limit}",
+    limitReachedHistory: "Reached limit {limit} / count {count}{memo}",
+    autoStopLimit: "Auto count stopped because limit was reached",
+    limitLoop: "Exceeded limit {limit}, so reset to 0",
+    limitLoopHistory: "Exceeded limit {limit} and reset to 0{memo}",
+    resetDone: "Reset count to 0",
+    undoDone: "Restored count to {count}",
+    timerStartHistory: "Timer started",
+    countdownStartHistory: "Countdown started {time}",
+    timerStopHistory: "Timer stopped {time}",
+    countdownStopHistory: "Countdown stopped {time}",
+    countdownDoneHistory: "Countdown finished {time} / count {count}{memo}",
+    timerStopAuto: "Auto count stopped with timer",
+    autoCounting: "Auto counting",
+    autoStartHistory: "Auto count started every {seconds}s",
+    startFromTarget: "Start countdown from {target}",
+    targetSet: "Set count to target {target}",
+    presetApplied: "Applied {name} preset",
+    presetHistory: "Applied {name} preset",
+    holdCounting: "Counting by long press",
+    plusDone: "Increased by {step}",
+    minusDone: "Decreased by {step}",
+    quickDone: "Moved by {amount}",
+    targetAlready: "Target {target} already reached",
+    targetAlreadyHistory: "Target {target} already reached / count {count}{memo}",
+    timerResetAuto: "Auto count stopped by timer reset",
+    countdownReset: "Countdown reset",
+    timerResetHistory: "Timer reset",
+    lapRunning: "Lap",
+    lapStopped: "Stopped lap",
+    lapHistory: "{status} {time} / count {count}{memo}",
+    countdownPresetSet: "Countdown set to {minutes}m {seconds}s",
+    addCounterAutoStop: "Auto count stopped to add counter",
+    counterDefault: "Counter",
+    counterAdded: "Added a new counter",
+    deleteCounterAutoStop: "Auto count stopped to delete counter",
+    counterDeleted: "Deleted counter",
+    switchCounterAutoStop: "Auto count stopped to switch counter",
+    counterSwitched: "Switched counter",
+    todayResetDone: "Reset today's total and high",
+  },
+};
+
+function text(key, values = {}) {
+  const template = i18n[languageSelect.value]?.[key] ?? i18n.ja[key] ?? key;
+  return template.replaceAll(/\{(\w+)\}/g, (_, name) => values[name] ?? "");
+}
+
+function presetLabel(key) {
+  return text(`preset${key[0].toUpperCase()}${key.slice(1)}`);
+}
+
+function presetMemo(key) {
+  return text(`memo${key[0].toUpperCase()}${key.slice(1)}`);
+}
+
+function setText(selector, key) {
+  const element = document.querySelector(selector);
+  if (element) element.textContent = text(key);
+}
+
+function setLabelText(input, key) {
+  input.closest("label")?.querySelector("span")?.replaceChildren(text(key));
+}
+
+function setActionButtonText(button, key) {
+  const textNode = Array.from(button.childNodes)
+    .filter((node) => node.nodeType === Node.TEXT_NODE)
+    .at(-1);
+  if (textNode) {
+    textNode.textContent = `\n            ${text(key)}\n          `;
+  }
+}
+
+function applyLanguage() {
+  document.documentElement.lang = languageSelect.value;
+  document.title = text("title");
+  setText("#app-title", "title");
+  setText(".counter-label", "currentNumber");
+  if ([i18n.ja.initialStatus, i18n.en.initialStatus].includes(statusText.textContent)) {
+    statusText.textContent = text("initialStatus");
+  }
+  inlineResetButton.textContent = text("reset");
+  resetButton.textContent = text("reset");
+  undoButton.textContent = text("undo");
+  setActionButtonText(minusButton, "minus");
+  setActionButtonText(plusButton, "plus");
+  document.querySelector(".advanced-shell > summary").firstChild.textContent = text("advanced");
+
+  counterNameInput.closest(".tool-panel").querySelector("h2").textContent = text("counterSettings");
+  applyPresetButton.closest(".tool-panel").querySelector("h2").textContent = text("presets");
+  applyPresetButton.textContent = text("apply");
+  applyPresetButton.closest(".tool-panel").querySelector(".small-note").textContent = text("presetHelp");
+  setLabelText(counterNameInput, "counterName");
+  setLabelText(counterSelect, "counterSelect");
+  addCounterButton.textContent = text("add");
+  deleteCounterButton.textContent = text("delete");
+  setLabelText(countModeSelect, "countMode");
+  countModeSelect.options[0].textContent = text("countUp");
+  countModeSelect.options[1].textContent = text("countDown");
+  setLabelText(stepInput, "stepLabel");
+  setLabelText(targetInput, "targetNumber");
+  setLabelText(limitInput, "limitNumber");
+  setLabelText(limitModeSelect, "limitBehavior");
+  limitModeSelect.options[0].textContent = text("noLimit");
+  limitModeSelect.options[1].textContent = text("stopAtLimit");
+  limitModeSelect.options[2].textContent = text("loopToZero");
+  setLabelText(presetSelect, "presetUse");
+  presetSelect.options[0].textContent = text("presetTraining");
+  presetSelect.options[1].textContent = text("presetReading");
+  presetSelect.options[2].textContent = text("presetFocus");
+  presetSelect.options[3].textContent = text("presetSaving");
+  timerModeSelect.closest(".tool-panel").querySelector("h2").textContent = text("timer");
+  intervalInput.closest(".tool-panel").querySelector("h2").textContent = text("autoCount");
+  setLabelText(intervalInput, "intervalLabel");
+  autoPlusButton.textContent = text("autoPlus");
+  autoMinusButton.textContent = text("autoMinus");
+  memoInput.closest(".tool-panel").querySelector("h2").textContent = text("memo");
+  memoInput.placeholder = text("memoPlaceholder");
+  memoPresetButtons[0].textContent = text("memoChipTraining");
+  memoPresetButtons[1].textContent = text("memoChipReading");
+  memoPresetButtons[2].textContent = text("memoChipFocus");
+  memoPresetButtons[3].textContent = text("memoChipSaving");
+  todayTotalValue.closest(".tool-panel").querySelector("h2").textContent = text("today");
+  todayTotalValue.closest(".stat-grid").querySelectorAll("span")[0].textContent = text("total");
+  todayTotalValue.closest(".stat-grid").querySelectorAll("span")[1].textContent = text("high");
+  todayResetButton.textContent = text("resetToday");
+  missionTitle.closest(".tool-panel").querySelector("h2").textContent = text("mission");
+  miniGraph.closest(".tool-panel").querySelector("h2").textContent = text("recent");
+  soundToggle.closest(".tool-panel").querySelector("h2").textContent = text("notify");
+  soundToggle.closest("label").querySelector("span").textContent = text("sound");
+  vibrateToggle.closest("label").querySelector("span").textContent = text("vibrate");
+  soundToggle.closest(".tool-panel").querySelector(".small-note").textContent = text("shortcutNote");
+  document.querySelector("#history-title").textContent = text("history");
+  exportCsvButton.textContent = text("exportCsv");
+  clearHistoryButton.textContent = text("clearHistory");
+
+  setLabelText(timerModeSelect, "timerType");
+  setLabelText(countdownMinutesInput, "minutes");
+  setLabelText(countdownSecondsInput, "seconds");
+  countdownPresetButtons[0].textContent = text("oneMinute");
+  countdownPresetButtons[1].textContent = text("threeMinutes");
+  countdownPresetButtons[2].textContent = text("fiveMinutes");
+  countdownPresetButtons[3].textContent = text("tenMinutes");
+  timerModeSelect.options[0].textContent = text("stopwatch");
+  timerModeSelect.options[1].textContent = text("countdown");
+  floatingTimerLabel.textContent = timerModeSelect.value === "countdown" ? text("countdown") : text("floatingTimer");
+  autoCountToggle.closest("label").querySelector("span").textContent = text("autoWithTimer");
+  stopAutoWithTimerToggle.closest("label").querySelector("span").textContent = text("stopAutoWithTimer");
+
+  timerToggleButton.textContent = app.timerRunning
+    ? text("stop")
+    : timerModeSelect.value === "countdown"
+      ? text("startCountdown")
+      : text("startTimer");
+  lapButton.textContent = text("lap");
+  timerResetButton.textContent = text("timerReset");
+}
 
 function getTodayKey() {
   return new Date().toLocaleDateString("sv-SE");
@@ -907,6 +1782,7 @@ const app = {
   counters: [],
   currentCounterId: "",
   dark: false,
+  presetAccent: "reading",
   timerRunning: false,
   timerStartedAt: 0,
   elapsedBeforeStart: 0,
@@ -925,7 +1801,7 @@ function makeId() {
   return `counter-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function makeCounter(name = "カウンター") {
+function makeCounter(name = text("counterDefault")) {
   return {
     id: makeId(),
     name,
@@ -935,6 +1811,7 @@ function makeCounter(name = "カウンター") {
     limit: "100",
     limitMode: "none",
     countMode: "up",
+    presetAccent: "reading",
     memo: "",
     history: [],
     undoStack: [],
@@ -980,13 +1857,14 @@ function saveActiveCounter() {
   const counter = currentCounter();
   if (!counter) return;
 
-  counter.name = counterNameInput.value.trim() || "カウンター";
+  counter.name = counterNameInput.value.trim() || text("counterDefault");
   counter.count = app.count;
   counter.step = stepInput.value;
   counter.target = targetInput.value;
   counter.limit = limitInput.value;
   counter.limitMode = limitModeSelect.value;
   counter.countMode = countModeSelect.value;
+  counter.presetAccent = app.presetAccent;
   counter.memo = memoInput.value;
   counter.history = app.history;
   counter.undoStack = app.undoStack;
@@ -1007,8 +1885,9 @@ function applyCounter(counter) {
   app.dailyDate = counter.dailyDate ?? getTodayKey();
   app.todayTotal = safeNumber(counter.todayTotal, 0);
   app.todayHigh = safeNumber(counter.todayHigh, Math.max(0, app.count));
+  app.presetAccent = counter.presetAccent ?? "reading";
 
-  counterNameInput.value = counter.name ?? "カウンター";
+  counterNameInput.value = counter.name ?? text("counterDefault");
   stepInput.value = counter.step ?? 1;
   targetInput.value = counter.target ?? 10;
   limitInput.value = counter.limit ?? 100;
@@ -1019,12 +1898,13 @@ function applyCounter(counter) {
 }
 
 function migrateOldSave(saved) {
-  const counter = makeCounter("カウンター");
+  const counter = makeCounter(text("counterDefault"));
   counter.count = safeNumber(saved.count, 0);
   counter.step = saved.step ?? 1;
   counter.target = saved.target ?? 10;
   counter.limit = saved.limit ?? 100;
   counter.limitMode = saved.limitMode ?? "none";
+  counter.presetAccent = saved.presetAccent ?? "reading";
   counter.memo = saved.memo ?? "";
   counter.history = Array.isArray(saved.history) ? saved.history : [];
   counter.undoStack = saved.lastCount === null || saved.lastCount === undefined ? [] : [saved.lastCount];
@@ -1034,6 +1914,10 @@ function migrateOldSave(saved) {
     counters: [counter],
     currentCounterId: counter.id,
     dark: Boolean(saved.dark),
+    language: saved.language ?? "ja",
+    timerMode: saved.timerMode ?? "stopwatch",
+    countdownMinutes: saved.countdownMinutes ?? "5",
+    countdownSeconds: saved.countdownSeconds ?? "0",
     autoCount: saved.autoCount ?? false,
     stopAutoWithTimer: saved.stopAutoWithTimer ?? true,
     sound: false,
@@ -1051,6 +1935,10 @@ function save() {
         counters: app.counters,
         currentCounterId: app.currentCounterId,
         dark: app.dark,
+        language: languageSelect.value,
+        timerMode: timerModeSelect.value,
+        countdownMinutes: countdownMinutesInput.value,
+        countdownSeconds: countdownSecondsInput.value,
         autoCount: autoCountToggle.checked,
         stopAutoWithTimer: stopAutoWithTimerToggle.checked,
         sound: soundToggle.checked,
@@ -1058,6 +1946,7 @@ function save() {
       })
     );
   } catch (error) {
+    statusText.textContent = text("saveFailed");
     console.warn("保存できませんでした。ブラウザの設定を確認してください。", error);
   }
 }
@@ -1071,6 +1960,10 @@ function load() {
     app.counters = Array.isArray(data.counters) && data.counters.length > 0 ? data.counters : [makeCounter()];
     app.currentCounterId = data.currentCounterId ?? app.counters[0].id;
     app.dark = Boolean(data.dark);
+    languageSelect.value = data.language ?? "ja";
+    timerModeSelect.value = data.timerMode ?? "stopwatch";
+    countdownMinutesInput.value = data.countdownMinutes ?? "5";
+    countdownSecondsInput.value = data.countdownSeconds ?? "0";
     autoCountToggle.checked = data.autoCount ?? false;
     stopAutoWithTimerToggle.checked = data.stopAutoWithTimer ?? true;
     soundToggle.checked = data.sound ?? false;
@@ -1081,7 +1974,7 @@ function load() {
     localStorage.removeItem(storageKey);
     app.counters = [makeCounter()];
     applyCounter(app.counters[0]);
-    statusText.textContent = "保存データを読み直しました。もう一度ボタンを押してください。";
+    statusText.textContent = text("saveReloaded");
     console.warn("保存データを読み込めなかったため、初期状態に戻しました。", error);
   }
 }
@@ -1091,11 +1984,78 @@ function renderCounterOptions() {
   app.counters.forEach((counter) => {
     const option = document.createElement("option");
     option.value = counter.id;
-    option.textContent = counter.name || "カウンター";
+    option.textContent = counter.name || text("counterDefault");
     counterSelect.appendChild(option);
   });
   counterSelect.value = app.currentCounterId;
   deleteCounterButton.disabled = app.counters.length <= 1;
+}
+
+function renderMission(target, remaining, isDownMode) {
+  const name = counterNameInput.value.trim() || text("counterDefault");
+  const memo = memoInput.value.trim();
+  const achieved = isDownMode ? app.count <= 0 : app.count >= target;
+  const percent = isDownMode
+    ? Math.min(100, Math.max(0, ((target - app.count) / target) * 100))
+    : Math.min(100, Math.max(0, (app.count / target) * 100));
+
+  missionTitle.textContent = name;
+  missionBadge.textContent = achieved ? text("achievedBadge") : `${Math.round(percent)}%`;
+  missionDetail.textContent = achieved
+    ? text("missionDone", { name })
+    : text("missionDetail", { memo: memo || text("number"), target: isDownMode ? "0" : target, remaining: Math.max(0, remaining) });
+}
+
+function renderMiniGraph() {
+  const recentEntries = app.history
+    .filter((item) => typeof item !== "string" && Number.isFinite(Number(item.count)))
+    .slice(0, 8)
+    .reverse();
+
+  miniGraph.innerHTML = "";
+
+  if (recentEntries.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-graph";
+    empty.textContent = text("emptyGraph");
+    miniGraph.appendChild(empty);
+    return;
+  }
+
+  const maxCount = Math.max(1, ...recentEntries.map((item) => Math.abs(Number(item.count))));
+  recentEntries.forEach((item) => {
+    const graphItem = document.createElement("span");
+    const bar = document.createElement("span");
+    const label = document.createElement("span");
+    const count = Math.abs(Number(item.count));
+    graphItem.className = "mini-graph-item";
+    bar.className = "mini-graph-bar";
+    bar.style.height = `${Math.max(8, (count / maxCount) * 92)}px`;
+    bar.title = `${item.counterName ?? text("counterDefault")}: ${item.count}`;
+    label.className = "mini-graph-label";
+    label.textContent = item.count;
+    graphItem.append(bar, label);
+    miniGraph.appendChild(graphItem);
+  });
+}
+
+function playCountEffect(amount) {
+  const now = Date.now();
+  if (now - lastEffectAt < 170) return;
+  lastEffectAt = now;
+
+  countValue.classList.remove("count-pop-plus", "count-pop-minus");
+  progressFill.classList.remove("progress-sheen");
+  void countValue.offsetWidth;
+  void progressFill.offsetWidth;
+  countValue.classList.add(amount >= 0 ? "count-pop-plus" : "count-pop-minus");
+  progressFill.classList.add("progress-sheen");
+}
+
+function playMilestoneEffect() {
+  counterPanel.classList.remove("milestone-ring");
+  void counterPanel.offsetWidth;
+  counterPanel.classList.add("milestone-ring");
 }
 
 function render() {
@@ -1116,27 +2076,48 @@ function render() {
   progressFill.style.width = `${progress}%`;
   progressText.textContent = isDownMode
     ? remaining > 0
-      ? `0まであと ${remaining}`
-      : "0に届いています"
+      ? text("zeroProgress", { value: remaining })
+      : text("zeroReached")
     : remaining > 0
-      ? `目標まであと ${remaining}`
-      : "目標に届いています";
-  nameStat.textContent = counterNameInput.value.trim() || "カウンター";
-  stepStat.textContent = `ステップ ${step}`;
-  targetStat.textContent = isDownMode ? `開始 ${target}` : `目標 ${target}`;
-  remainingStat.textContent = remaining > 0 ? `残り ${remaining}` : "達成済み";
-  limitStat.textContent = limitMode === "none" ? "上限なし" : `上限 ${limit}`;
+      ? text("targetProgress", { value: remaining })
+      : text("targetReachedShort");
+  nameStat.textContent = counterNameInput.value.trim() || text("counterDefault");
+  stepStat.textContent = text("stepStat", { value: step });
+  targetStat.textContent = isDownMode ? text("startStat", { value: target }) : text("targetStat", { value: target });
+  remainingStat.textContent = remaining > 0 ? text("remainingStat", { value: remaining }) : text("achieved");
+  limitStat.textContent = limitMode === "none" ? text("noLimit") : text("limitStat", { value: limit });
   todayTotalValue.textContent = app.todayTotal;
   todayHighValue.textContent = app.todayHigh;
+  document.body.dataset.accent = app.presetAccent;
+  renderMission(target, remaining, isDownMode);
+  renderMiniGraph();
   undoButton.disabled = app.undoStack.length === 0;
-  targetButton.textContent = isDownMode ? "開始値にする" : "目標まで増やす";
+  targetButton.textContent = isDownMode ? text("setStart") : text("setToTarget");
   document.body.classList.toggle("dark", app.dark);
   autoPlusButton.classList.toggle("active", app.autoDirection === 1);
   autoMinusButton.classList.toggle("active", app.autoDirection === -1);
   autoToggleButton.classList.toggle("running", app.autoRunning);
-  autoToggleButton.textContent = app.autoRunning ? "自動カウント停止" : "自動カウント開始";
+  autoToggleButton.textContent = app.autoRunning ? text("autoStop") : text("autoStart");
   timerToggleButton.classList.toggle("running", app.timerRunning);
-  timerToggleButton.textContent = app.timerRunning ? "停止" : "開始";
+  timerToggleButton.textContent = app.timerRunning
+    ? text("stop")
+    : timerModeSelect.value === "countdown"
+      ? text("startCountdown")
+      : text("startTimer");
+  document.body.classList.toggle("timer-countdown", timerModeSelect.value === "countdown");
+  document.body.classList.toggle("timer-active", app.timerRunning);
+  timerModeSelect.disabled = app.timerRunning;
+  countdownMinutesInput.disabled = app.timerRunning;
+  countdownSecondsInput.disabled = app.timerRunning;
+  countdownPresetButtons.forEach((button) => {
+    button.disabled = app.timerRunning;
+  });
+  if (!app.timerRunning) {
+    const displayTime = formatTime(getTimerDisplayTime());
+    timeValue.textContent = displayTime;
+    floatingTimeValue.textContent = displayTime;
+  }
+  applyLanguage();
 
   historyList.innerHTML = "";
   app.history.slice(0, 8).forEach((item, index) => {
@@ -1148,7 +2129,7 @@ function render() {
     deleteButton.className = "delete-history-button";
     deleteButton.type = "button";
     deleteButton.textContent = "×";
-    deleteButton.setAttribute("aria-label", "この記録を消す");
+    deleteButton.setAttribute("aria-label", text("deleteHistoryLabel"));
     deleteButton.dataset.historyIndex = index;
 
     listItem.append(text, deleteButton);
@@ -1186,7 +2167,7 @@ function addHistory(message, details = {}) {
   const entry = {
     id: Date.now(),
     date: now.toISOString(),
-    counterName: counterNameInput.value.trim() || "カウンター",
+    counterName: counterNameInput.value.trim() || text("counterDefault"),
     text: `${time} ${message}`,
     count: app.count,
     amount: details.amount ?? 0,
@@ -1220,19 +2201,21 @@ function handleMilestones(beforeCount, amount) {
   const reachedZero = isDownMode && amount < 0 && beforeCount > 0 && app.count <= 0;
 
   if (reachedTarget) {
-    statusText.textContent = `目標の ${target} に到達しました`;
-    addHistory(`目標達成 ${target} / 数字 ${app.count}${getMemoText()}`, { amount, type: "target" });
+    statusText.textContent = text("targetReached", { target });
+    addHistory(text("targetHistory", { target, count: app.count, memo: getMemoText() }), { amount, type: "target" });
     notifyUser();
+    playMilestoneEffect();
     return true;
   }
 
   if (reachedZero) {
     app.count = 0;
-    statusText.textContent = "0に到達しました";
-    addHistory(`カウントダウン完了 / 数字 0${getMemoText()}`, { amount, type: "target" });
+    statusText.textContent = text("zeroComplete");
+    addHistory(text("countdownCountComplete", { memo: getMemoText() }), { amount, type: "target" });
     notifyUser();
+    playMilestoneEffect();
     if (app.autoRunning) {
-      stopAutoCount("0に到達したので自動カウント停止");
+      stopAutoCount(text("autoStopZero"));
     }
     return true;
   }
@@ -1246,16 +2229,30 @@ function changeCount(amount, message) {
   const limitMode = limitModeSelect.value;
   const isDownMode = countModeSelect.value === "down";
   const nextCount = app.count + amount;
+  const undoLengthBefore = app.undoStack.length;
   rememberCountForUndo();
 
   if (amount > 0 && limitMode === "stop" && nextCount >= limit) {
+    const stopAmount = limit - beforeCount;
+    if (stopAmount <= 0) {
+      if (app.undoStack.length > undoLengthBefore) {
+        app.undoStack.pop();
+      }
+      statusText.textContent = text("alreadyLimit", { limit });
+      save();
+      render();
+      return;
+    }
+
     app.count = limit;
-    updateStats(limit - beforeCount);
-    statusText.textContent = `上限の ${limit} で止まりました`;
-    addHistory(`上限 ${limit} に到達 / 数字 ${app.count}${getMemoText()}`, { amount: limit - beforeCount, type: "limit" });
+    updateStats(stopAmount);
+    statusText.textContent = text("limitStopped", { limit });
+    addHistory(text("limitReachedHistory", { limit, count: app.count, memo: getMemoText() }), { amount: stopAmount, type: "limit" });
     notifyUser();
+    playCountEffect(stopAmount);
+    playMilestoneEffect();
     if (app.autoRunning) {
-      stopAutoCount("上限に到達したので自動カウント停止");
+      stopAutoCount(text("autoStopLimit"));
     }
     save();
     render();
@@ -1265,9 +2262,11 @@ function changeCount(amount, message) {
   if (amount > 0 && limitMode === "loop" && nextCount > limit) {
     app.count = 0;
     updateStats(amount);
-    statusText.textContent = `上限の ${limit} を超えたので0に戻りました`;
-    addHistory(`上限 ${limit} を超えて0に戻りました${getMemoText()}`, { amount, type: "limit" });
+    statusText.textContent = text("limitLoop", { limit });
+    addHistory(text("limitLoopHistory", { limit, memo: getMemoText() }), { amount, type: "limit" });
     notifyUser();
+    playCountEffect(amount);
+    playMilestoneEffect();
     save();
     render();
     return;
@@ -1281,6 +2280,7 @@ function changeCount(amount, message) {
     statusText.textContent = message;
   }
 
+  playCountEffect(actualAmount);
   save();
   render();
 }
@@ -1288,8 +2288,8 @@ function changeCount(amount, message) {
 function resetCount() {
   rememberCountForUndo();
   app.count = 0;
-  statusText.textContent = "数字を0に戻しました";
-  addHistory("数字を0に戻しました", { type: "reset" });
+  statusText.textContent = text("resetDone");
+  addHistory(text("resetDone"), { type: "reset" });
   save();
   render();
 }
@@ -1299,8 +2299,8 @@ function undoLastCount() {
 
   const restoredCount = app.undoStack.pop();
   app.count = restoredCount;
-  statusText.textContent = `数字を ${restoredCount} に戻しました`;
-  addHistory(`数字を ${restoredCount} に戻しました`, { type: "undo" });
+  statusText.textContent = text("undoDone", { count: restoredCount });
+  addHistory(text("undoDone", { count: restoredCount }), { type: "undo" });
   save();
   render();
 }
@@ -1313,26 +2313,60 @@ function formatTime(milliseconds) {
   return `${minutes}:${seconds}.${tenths}`;
 }
 
+function getCountdownDuration() {
+  const minutes = Math.max(0, Math.floor(safeNumber(countdownMinutesInput.value, 5)));
+  const seconds = Math.max(0, Math.floor(safeNumber(countdownSecondsInput.value, 0)));
+  return Math.max(1000, (minutes * 60 + Math.min(59, seconds)) * 1000);
+}
+
 function getElapsedTime() {
   if (!app.timerRunning) return app.elapsedBeforeStart;
   return app.elapsedBeforeStart + Date.now() - app.timerStartedAt;
 }
 
+function getTimerDisplayTime() {
+  if (timerModeSelect.value !== "countdown") {
+    return getElapsedTime();
+  }
+
+  return Math.max(0, getCountdownDuration() - getElapsedTime());
+}
+
 function updateTimer() {
-  timeValue.textContent = formatTime(getElapsedTime());
+  const displayTime = formatTime(getTimerDisplayTime());
+  timeValue.textContent = displayTime;
+  floatingTimeValue.textContent = displayTime;
+  if (timerModeSelect.value === "countdown" && app.timerRunning && !countdownWarned && getTimerDisplayTime() <= 3000) {
+    countdownWarned = true;
+    statusText.textContent = text("countdownWarn");
+  }
+  if (timerModeSelect.value === "countdown" && app.timerRunning && getElapsedTime() >= getCountdownDuration()) {
+    finishCountdown();
+    return;
+  }
+
   if (app.timerRunning) {
     app.timerFrameId = requestAnimationFrame(updateTimer);
   }
 }
 
 function startTimer() {
+  if (timerModeSelect.value === "countdown" && app.elapsedBeforeStart >= getCountdownDuration()) {
+    app.elapsedBeforeStart = 0;
+  }
+  countdownWarned = false;
   app.timerRunning = true;
   app.timerStartedAt = Date.now();
   updateTimer();
   if (autoCountToggle.checked && !app.autoRunning) {
     startAutoCount();
   }
-  addHistory("タイマー開始", { type: "timer" });
+  addHistory(
+    timerModeSelect.value === "countdown"
+      ? text("countdownStartHistory", { time: formatTime(getCountdownDuration()) })
+      : text("timerStartHistory"),
+    { type: "timer" }
+  );
 }
 
 function stopTimer() {
@@ -1340,9 +2374,31 @@ function stopTimer() {
   app.timerRunning = false;
   cancelAnimationFrame(app.timerFrameId);
   if (stopAutoWithTimerToggle.checked && app.autoRunning) {
-    stopAutoCount("タイマー停止で自動カウントも停止");
+    stopAutoCount(text("timerStopAuto"));
   }
-  addHistory(`タイマー停止 ${formatTime(app.elapsedBeforeStart)}`, { type: "timer" });
+  addHistory(
+    timerModeSelect.value === "countdown"
+      ? text("countdownStopHistory", { time: formatTime(getTimerDisplayTime()) })
+      : text("timerStopHistory", { time: formatTime(getTimerDisplayTime()) }),
+    { type: "timer" }
+  );
+}
+
+function finishCountdown() {
+  const completedDuration = getCountdownDuration();
+  app.elapsedBeforeStart = getCountdownDuration();
+  app.timerRunning = false;
+  cancelAnimationFrame(app.timerFrameId);
+  timeValue.textContent = "00:00.0";
+  statusText.textContent = text("timerDone");
+  addHistory(text("countdownDoneHistory", { time: formatTime(completedDuration), count: app.count, memo: getMemoText() }), { type: "timer" });
+  notifyUser();
+  playMilestoneEffect();
+  if (stopAutoWithTimerToggle.checked && app.autoRunning) {
+    app.autoRunning = false;
+    clearInterval(app.autoTimerId);
+  }
+  render();
 }
 
 function startAutoCount() {
@@ -1350,12 +2406,12 @@ function startAutoCount() {
   app.autoRunning = true;
   clearInterval(app.autoTimerId);
   app.autoTimerId = setInterval(() => {
-    changeCount(app.autoDirection * getStep(), "自動カウント中です");
+    changeCount(app.autoDirection * getStep(), text("autoCounting"));
   }, seconds * 1000);
-  addHistory(`自動カウント開始 ${seconds}秒ごと`, { type: "auto" });
+  addHistory(text("autoStartHistory", { seconds }), { type: "auto" });
 }
 
-function stopAutoCount(message = "自動カウント停止") {
+function stopAutoCount(message = text("autoStop")) {
   app.autoRunning = false;
   clearInterval(app.autoTimerId);
   addHistory(message, { type: "auto" });
@@ -1366,8 +2422,29 @@ function setCountToTarget() {
   rememberCountForUndo();
   app.count = target;
   app.todayHigh = Math.max(app.todayHigh, app.count);
-  statusText.textContent = countModeSelect.value === "down" ? `${target} からカウントダウンします` : `目標の ${target} に合わせました`;
-  addHistory(`${statusText.textContent} / 数字 ${app.count}${getMemoText()}`, { type: "target" });
+  statusText.textContent = countModeSelect.value === "down"
+    ? text("startFromTarget", { target })
+    : text("targetSet", { target });
+  addHistory(`${statusText.textContent} / ${text("number")} ${app.count}${getMemoText()}`, { type: "target" });
+  playMilestoneEffect();
+  save();
+  render();
+}
+
+function applyPreset() {
+  const preset = presets[presetSelect.value];
+  if (!preset) return;
+
+  counterNameInput.value = presetLabel(presetSelect.value);
+  stepInput.value = preset.step;
+  targetInput.value = preset.target;
+  limitInput.value = preset.limit;
+  limitModeSelect.value = "none";
+  countModeSelect.value = "up";
+  app.presetAccent = preset.accent;
+  memoInput.value = presetMemo(presetSelect.value);
+  statusText.textContent = text("presetApplied", { name: presetLabel(presetSelect.value) });
+  addHistory(text("presetHistory", { name: presetLabel(presetSelect.value) }), { type: "preset" });
   save();
   render();
 }
@@ -1405,21 +2482,33 @@ function startHold(button, amount) {
   let holdTimerId = null;
   let repeatTimerId = null;
   let repeated = false;
+  let activePointerId = null;
 
-  button.addEventListener("pointerdown", () => {
+  function clearHold() {
+    clearTimeout(holdTimerId);
+    clearInterval(repeatTimerId);
+    holdTimerId = null;
+    repeatTimerId = null;
+    activePointerId = null;
+  }
+
+  button.addEventListener("pointerdown", (event) => {
+    if (activePointerId !== null) return;
+    activePointerId = event.pointerId;
+    button.setPointerCapture?.(event.pointerId);
     repeated = false;
     holdTimerId = setTimeout(() => {
       repeated = true;
       repeatTimerId = setInterval(() => {
-        changeCount(amount(), "長押しでカウント中です");
+        changeCount(amount(), text("holdCounting"));
       }, 130);
     }, 450);
   });
 
   ["pointerup", "pointerleave", "pointercancel"].forEach((eventName) => {
-    button.addEventListener(eventName, () => {
-      clearTimeout(holdTimerId);
-      clearInterval(repeatTimerId);
+    button.addEventListener(eventName, (event) => {
+      if (activePointerId !== null && event.pointerId !== activePointerId) return;
+      clearHold();
       if (repeated) {
         button.dataset.skipClick = "true";
       }
@@ -1432,7 +2521,7 @@ plusButton.addEventListener("click", () => {
     plusButton.dataset.skipClick = "false";
     return;
   }
-  changeCount(getStep(), `${getStep()} 増やしました`);
+  changeCount(getStep(), text("plusDone", { step: getStep() }));
 });
 
 minusButton.addEventListener("click", () => {
@@ -1440,7 +2529,7 @@ minusButton.addEventListener("click", () => {
     minusButton.dataset.skipClick = "false";
     return;
   }
-  changeCount(-getStep(), `${getStep()} 減らしました`);
+  changeCount(-getStep(), text("minusDone", { step: getStep() }));
 });
 
 startHold(plusButton, () => getStep());
@@ -1449,13 +2538,14 @@ startHold(minusButton, () => -getStep());
 quickButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const amount = safeNumber(button.dataset.quick, 0);
-    changeCount(amount, `${amount} まとめて動かしました`);
+    changeCount(amount, text("quickDone", { amount }));
   });
 });
 
 inlineResetButton.addEventListener("click", resetCount);
 resetButton.addEventListener("click", resetCount);
 undoButton.addEventListener("click", undoLastCount);
+applyPresetButton.addEventListener("click", applyPreset);
 
 targetButton.addEventListener("click", () => {
   if (countModeSelect.value === "down") {
@@ -1466,11 +2556,11 @@ targetButton.addEventListener("click", () => {
   const target = getTarget();
   const difference = target - app.count;
   if (difference === 0) {
-    statusText.textContent = `目標の ${target} に到達済みです`;
-    addHistory(`目標の ${target} に到達済み / 数字 ${app.count}${getMemoText()}`, { type: "target" });
+    statusText.textContent = text("targetAlready", { target });
+    addHistory(text("targetAlreadyHistory", { target, count: app.count, memo: getMemoText() }), { type: "target" });
     return;
   }
-  changeCount(difference, `目標の ${target} に合わせました`);
+  changeCount(difference, text("targetSet", { target }));
 });
 
 timerToggleButton.addEventListener("click", () => {
@@ -1485,18 +2575,42 @@ timerToggleButton.addEventListener("click", () => {
 timerResetButton.addEventListener("click", () => {
   app.timerRunning = false;
   app.elapsedBeforeStart = 0;
+  countdownWarned = false;
   cancelAnimationFrame(app.timerFrameId);
   if (stopAutoWithTimerToggle.checked && app.autoRunning) {
-    stopAutoCount("タイマーリセットで自動カウントも停止");
+    stopAutoCount(text("timerResetAuto"));
   }
-  timeValue.textContent = "00:00.0";
-  addHistory("タイマーをリセット", { type: "timer" });
+  timeValue.textContent = formatTime(getTimerDisplayTime());
+  addHistory(timerModeSelect.value === "countdown" ? text("countdownReset") : text("timerResetHistory"), { type: "timer" });
   render();
 });
 
 lapButton.addEventListener("click", () => {
-  const timerStatus = app.timerRunning ? "記録" : "停止中の記録";
-  addHistory(`${timerStatus} ${formatTime(getElapsedTime())} / 数字 ${app.count}${getMemoText()}`, { type: "lap" });
+  const timerStatus = app.timerRunning ? text("lapRunning") : text("lapStopped");
+  addHistory(text("lapHistory", { status: timerStatus, time: formatTime(getTimerDisplayTime()), count: app.count, memo: getMemoText() }), { type: "lap" });
+});
+
+countdownPresetButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (app.timerRunning) return;
+    const seconds = Math.max(1, safeNumber(button.dataset.countdownPreset, 300));
+    countdownMinutesInput.value = String(Math.floor(seconds / 60));
+    countdownSecondsInput.value = String(seconds % 60);
+    app.elapsedBeforeStart = 0;
+    statusText.textContent = text("countdownPresetSet", { minutes: Math.floor(seconds / 60), seconds: seconds % 60 });
+    save();
+    render();
+  });
+});
+
+memoPresetButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const key = button.dataset.memoPreset;
+    memoInput.value = presetMemo(key);
+    statusText.textContent = text("memoPresetSet", { memo: memoInput.value });
+    save();
+    render();
+  });
 });
 
 autoPlusButton.addEventListener("click", () => {
@@ -1520,13 +2634,13 @@ autoToggleButton.addEventListener("click", () => {
 
 addCounterButton.addEventListener("click", () => {
   if (app.autoRunning) {
-    stopAutoCount("カウンター追加のため自動カウント停止");
+    stopAutoCount(text("addCounterAutoStop"));
   }
   saveActiveCounter();
-  const counter = makeCounter(`カウンター${app.counters.length + 1}`);
+  const counter = makeCounter(`${text("counterDefault")}${app.counters.length + 1}`);
   app.counters.push(counter);
   applyCounter(counter);
-  statusText.textContent = "新しいカウンターを追加しました";
+  statusText.textContent = text("counterAdded");
   save();
   render();
 });
@@ -1534,22 +2648,22 @@ addCounterButton.addEventListener("click", () => {
 deleteCounterButton.addEventListener("click", () => {
   if (app.counters.length <= 1) return;
   if (app.autoRunning) {
-    stopAutoCount("カウンター削除のため自動カウント停止");
+    stopAutoCount(text("deleteCounterAutoStop"));
   }
   app.counters = app.counters.filter((counter) => counter.id !== app.currentCounterId);
   applyCounter(app.counters[0]);
-  statusText.textContent = "カウンターを削除しました";
+  statusText.textContent = text("counterDeleted");
   save();
   render();
 });
 
 counterSelect.addEventListener("change", () => {
   if (app.autoRunning) {
-    stopAutoCount("カウンター切り替えのため自動カウント停止");
+    stopAutoCount(text("switchCounterAutoStop"));
   }
   saveActiveCounter();
   applyCounter(app.counters.find((counter) => counter.id === counterSelect.value) ?? app.counters[0]);
-  statusText.textContent = "カウンターを切り替えました";
+  statusText.textContent = text("counterSwitched");
   save();
   render();
 });
@@ -1563,6 +2677,13 @@ clearHistoryButton.addEventListener("click", () => {
   app.history = [];
   save();
   render();
+});
+
+todayResetButton.addEventListener("click", () => {
+  app.todayTotal = 0;
+  app.todayHigh = Math.max(0, app.count);
+  statusText.textContent = text("todayResetDone");
+  addHistory(text("todayResetDone"), { type: "reset" });
 });
 
 historyList.addEventListener("click", (event) => {
@@ -1581,12 +2702,23 @@ themeButton.addEventListener("click", () => {
   render();
 });
 
-[countModeSelect, stepInput, targetInput, limitInput, limitModeSelect, intervalInput, memoInput, stopAutoWithTimerToggle, autoCountToggle, soundToggle, vibrateToggle].forEach((input) => {
+languageSelect.addEventListener("change", () => {
+  save();
+  render();
+});
+
+[countModeSelect, stepInput, targetInput, limitInput, limitModeSelect, timerModeSelect, countdownMinutesInput, countdownSecondsInput, intervalInput, memoInput, stopAutoWithTimerToggle, autoCountToggle, soundToggle, vibrateToggle].forEach((input) => {
   input.addEventListener("input", () => {
+    if ((input === timerModeSelect || input === countdownMinutesInput || input === countdownSecondsInput) && !app.timerRunning) {
+      app.elapsedBeforeStart = 0;
+    }
     save();
     render();
   });
   input.addEventListener("change", () => {
+    if ((input === timerModeSelect || input === countdownMinutesInput || input === countdownSecondsInput) && !app.timerRunning) {
+      app.elapsedBeforeStart = 0;
+    }
     save();
     render();
   });
@@ -1597,9 +2729,9 @@ document.addEventListener("keydown", (event) => {
   if (["INPUT", "TEXTAREA", "SELECT"].includes(tagName)) return;
 
   if (event.key === "+" || event.key === "=") {
-    changeCount(getStep(), `${getStep()} 増やしました`);
+    changeCount(getStep(), text("plusDone", { step: getStep() }));
   } else if (event.key === "-") {
-    changeCount(-getStep(), `${getStep()} 減らしました`);
+    changeCount(-getStep(), text("minusDone", { step: getStep() }));
   } else if (event.key === "0") {
     resetCount();
   } else if (event.key.toLowerCase() === "u") {
