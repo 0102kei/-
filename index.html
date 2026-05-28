@@ -388,10 +388,38 @@ body.dark .progress-track {
   color: var(--text);
   text-align: center;
   backdrop-filter: blur(20px) saturate(1.32);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease;
 }
 
 body.timer-active .floating-timer {
   display: block;
+}
+
+.floating-timer::before {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 30px;
+  height: 3px;
+  border-radius: 8px;
+  content: "";
+  background: color-mix(in srgb, var(--muted) 38%, transparent);
+  transform: translateX(-50%);
+}
+
+.floating-timer.dragging {
+  border-color: color-mix(in srgb, var(--mission-accent) 48%, var(--glass-border));
+  box-shadow: 0 20px 52px rgba(15, 23, 42, 0.24), 0 0 0 4px var(--mission-accent-soft), var(--inner-light);
+  cursor: grabbing;
+  transform: scale(1.02);
+}
+
+body.timer-dragging {
+  overflow: hidden;
+  touch-action: none;
 }
 
 .floating-timer span {
@@ -1049,7 +1077,7 @@ body.dark .mission-card {
         </div>
       </section>
 
-      <div class="floating-timer" aria-live="polite">
+      <div class="floating-timer" id="floatingTimer" aria-live="polite" role="button" tabindex="0">
         <span id="floatingTimerLabel">タイマー</span>
         <output id="floatingTimeValue">00:00.0</output>
       </div>
@@ -1096,6 +1124,39 @@ body.dark .mission-card {
             <input id="stopAutoWithTimerToggle" type="checkbox" checked />
             <span>タイマー停止で自動も止める</span>
           </label>
+        </article>
+
+        <article class="tool-panel">
+          <h2>休憩リマインダー</h2>
+          <label class="field">
+            <span>通知まで</span>
+            <select id="breakMinutesSelect">
+              <option value="15">15分</option>
+              <option value="25">25分</option>
+              <option value="50">50分</option>
+            </select>
+          </label>
+          <div class="mini-actions">
+            <button id="breakToggleButton" type="button">開始</button>
+            <button id="breakResetButton" type="button">リセット</button>
+          </div>
+          <p class="small-note" id="breakStatusText">スマホを見すぎる前に休憩を知らせます。</p>
+        </article>
+
+        <article class="tool-panel">
+          <h2 id="habit-title">習慣スタンプ</h2>
+          <div class="stat-grid">
+            <div>
+              <span id="habitTodayLabel">今日</span>
+              <strong id="habitTodayValue">未</strong>
+            </div>
+            <div>
+              <span id="habitStreakLabel">連続</span>
+              <strong id="habitStreakValue">0</strong>
+            </div>
+          </div>
+          <button class="wide-button" id="habitStampButton" type="button">今日のスタンプ</button>
+          <p class="small-note" id="habitStatusText">1日1回、続けた記録を残せます。</p>
         </article>
       </section>
 
@@ -1277,11 +1338,23 @@ const timerToggleButton = document.querySelector("#timerToggleButton");
 const timerResetButton = document.querySelector("#timerResetButton");
 const lapButton = document.querySelector("#lapButton");
 const timeValue = document.querySelector("#timeValue");
+const floatingTimer = document.querySelector("#floatingTimer");
 const floatingTimerLabel = document.querySelector("#floatingTimerLabel");
 const floatingTimeValue = document.querySelector("#floatingTimeValue");
 const timerModeSelect = document.querySelector("#timerModeSelect");
 const countdownMinutesInput = document.querySelector("#countdownMinutesInput");
 const countdownSecondsInput = document.querySelector("#countdownSecondsInput");
+const breakMinutesSelect = document.querySelector("#breakMinutesSelect");
+const breakToggleButton = document.querySelector("#breakToggleButton");
+const breakResetButton = document.querySelector("#breakResetButton");
+const breakStatusText = document.querySelector("#breakStatusText");
+const habitTitle = document.querySelector("#habit-title");
+const habitTodayLabel = document.querySelector("#habitTodayLabel");
+const habitTodayValue = document.querySelector("#habitTodayValue");
+const habitStreakLabel = document.querySelector("#habitStreakLabel");
+const habitStreakValue = document.querySelector("#habitStreakValue");
+const habitStampButton = document.querySelector("#habitStampButton");
+const habitStatusText = document.querySelector("#habitStatusText");
 const autoCountToggle = document.querySelector("#autoCountToggle");
 const stopAutoWithTimerToggle = document.querySelector("#stopAutoWithTimerToggle");
 const intervalInput = document.querySelector("#intervalInput");
@@ -1313,6 +1386,8 @@ const storageKey = "simple-counter-app";
 let audioContext = null;
 let lastEffectAt = 0;
 let countdownWarned = false;
+let breakTimerId = null;
+let breakFrameId = null;
 
 const presets = {
   training: {
@@ -1390,6 +1465,8 @@ const i18n = {
     presetHelp: "名前、1回の数、目標、メモをまとめて入れます。",
     timer: "タイマー",
     floatingTimer: "タイマー",
+    dragTimerHint: "タイマー表示。指で動かせます。ダブルタップで位置を切り替えます",
+    timerPositionMoved: "タイマー位置を切り替えました",
     timerType: "タイマーの種類",
     stopwatch: "時間を測る",
     countdown: "カウントダウン",
@@ -1406,6 +1483,31 @@ const i18n = {
     timerReset: "リセット",
     autoWithTimer: "タイマー中に自動でカウントする",
     stopAutoWithTimer: "タイマー停止で自動も止める",
+    breakReminder: "休憩リマインダー",
+    breakAfter: "通知まで",
+    breakOption15: "15分",
+    breakOption25: "25分",
+    breakOption50: "50分",
+    startBreakReminder: "開始",
+    stopBreakReminder: "停止",
+    resetBreakReminder: "リセット",
+    breakIdle: "スマホを見すぎる前に休憩を知らせます。",
+    breakRunning: "休憩まであと {minutes}分 {seconds}秒",
+    breakDone: "そろそろ休憩しましょう",
+    breakStartHistory: "休憩リマインダー開始 {minutes}分",
+    breakStopHistory: "休憩リマインダー停止",
+    breakResetHistory: "休憩リマインダーをリセット",
+    breakDoneHistory: "休憩リマインダー完了",
+    habit: "習慣スタンプ",
+    habitToday: "今日",
+    habitDone: "済",
+    habitNotYet: "未",
+    habitStreak: "連続",
+    habitStamp: "今日のスタンプ",
+    habitIdle: "1日1回、続けた記録を残せます。",
+    habitStamped: "今日のスタンプを押しました",
+    habitAlready: "今日はすでにスタンプ済みです",
+    habitStreakUnit: "{days}日",
     autoCount: "自動カウント",
     intervalLabel: "何秒ごとに動かすか",
     autoPlus: "増やす",
@@ -1540,6 +1642,8 @@ const i18n = {
     presetHelp: "Fill name, step, target, and memo at once.",
     timer: "Timer",
     floatingTimer: "Timer",
+    dragTimerHint: "Timer display. Drag to move. Double tap to switch position.",
+    timerPositionMoved: "Timer position switched.",
     timerType: "Timer Type",
     stopwatch: "Stopwatch",
     countdown: "Countdown",
@@ -1556,6 +1660,31 @@ const i18n = {
     timerReset: "Reset",
     autoWithTimer: "Auto count while timer is running",
     stopAutoWithTimer: "Stop auto count with timer",
+    breakReminder: "Break Reminder",
+    breakAfter: "Remind after",
+    breakOption15: "15 min",
+    breakOption25: "25 min",
+    breakOption50: "50 min",
+    startBreakReminder: "Start",
+    stopBreakReminder: "Stop",
+    resetBreakReminder: "Reset",
+    breakIdle: "Get a gentle nudge before phone time runs long.",
+    breakRunning: "Break in {minutes}m {seconds}s",
+    breakDone: "Time for a short break",
+    breakStartHistory: "Break reminder started for {minutes} min",
+    breakStopHistory: "Break reminder stopped",
+    breakResetHistory: "Break reminder reset",
+    breakDoneHistory: "Break reminder finished",
+    habit: "Habit Stamp",
+    habitToday: "Today",
+    habitDone: "Done",
+    habitNotYet: "No",
+    habitStreak: "Streak",
+    habitStamp: "Stamp Today",
+    habitIdle: "Stamp once a day to keep your streak.",
+    habitStamped: "Stamped today",
+    habitAlready: "Already stamped today",
+    habitStreakUnit: "{days}d",
     autoCount: "Auto Count",
     intervalLabel: "Move every",
     autoPlus: "Increase",
@@ -1756,8 +1885,20 @@ function applyLanguage() {
   timerModeSelect.options[0].textContent = text("stopwatch");
   timerModeSelect.options[1].textContent = text("countdown");
   floatingTimerLabel.textContent = timerModeSelect.value === "countdown" ? text("countdown") : text("floatingTimer");
+  floatingTimer.setAttribute("aria-label", text("dragTimerHint"));
+  floatingTimer.title = text("dragTimerHint");
   autoCountToggle.closest("label").querySelector("span").textContent = text("autoWithTimer");
   stopAutoWithTimerToggle.closest("label").querySelector("span").textContent = text("stopAutoWithTimer");
+  breakMinutesSelect.closest(".tool-panel").querySelector("h2").textContent = text("breakReminder");
+  setLabelText(breakMinutesSelect, "breakAfter");
+  breakMinutesSelect.options[0].textContent = text("breakOption15");
+  breakMinutesSelect.options[1].textContent = text("breakOption25");
+  breakMinutesSelect.options[2].textContent = text("breakOption50");
+  breakResetButton.textContent = text("resetBreakReminder");
+  habitTitle.textContent = text("habit");
+  habitTodayLabel.textContent = text("habitToday");
+  habitStreakLabel.textContent = text("habitStreak");
+  habitStampButton.textContent = text("habitStamp");
 
   timerToggleButton.textContent = app.timerRunning
     ? text("stop")
@@ -1790,6 +1931,11 @@ const app = {
   autoDirection: 1,
   autoTimerId: null,
   timerFrameId: null,
+  floatingTimerPosition: null,
+  breakReminderRunning: false,
+  breakReminderStartedAt: 0,
+  breakReminderDuration: 15 * 60 * 1000,
+  habitDates: [],
 };
 
 function safeNumber(value, fallback) {
@@ -1918,6 +2064,8 @@ function migrateOldSave(saved) {
     timerMode: saved.timerMode ?? "stopwatch",
     countdownMinutes: saved.countdownMinutes ?? "5",
     countdownSeconds: saved.countdownSeconds ?? "0",
+    floatingTimerPosition: saved.floatingTimerPosition ?? null,
+    habitDates: Array.isArray(saved.habitDates) ? saved.habitDates : [],
     autoCount: saved.autoCount ?? false,
     stopAutoWithTimer: saved.stopAutoWithTimer ?? true,
     sound: false,
@@ -1939,6 +2087,9 @@ function save() {
         timerMode: timerModeSelect.value,
         countdownMinutes: countdownMinutesInput.value,
         countdownSeconds: countdownSecondsInput.value,
+        floatingTimerPosition: app.floatingTimerPosition,
+        breakMinutes: breakMinutesSelect.value,
+        habitDates: app.habitDates,
         autoCount: autoCountToggle.checked,
         stopAutoWithTimer: stopAutoWithTimerToggle.checked,
         sound: soundToggle.checked,
@@ -1964,6 +2115,9 @@ function load() {
     timerModeSelect.value = data.timerMode ?? "stopwatch";
     countdownMinutesInput.value = data.countdownMinutes ?? "5";
     countdownSecondsInput.value = data.countdownSeconds ?? "0";
+    app.floatingTimerPosition = data.floatingTimerPosition ?? null;
+    breakMinutesSelect.value = data.breakMinutes ?? "15";
+    app.habitDates = Array.isArray(data.habitDates) ? data.habitDates : [];
     autoCountToggle.checked = data.autoCount ?? false;
     stopAutoWithTimerToggle.checked = data.stopAutoWithTimer ?? true;
     soundToggle.checked = data.sound ?? false;
@@ -2058,6 +2212,55 @@ function playMilestoneEffect() {
   counterPanel.classList.add("milestone-ring");
 }
 
+function clampFloatingTimerPosition(position) {
+  const rect = floatingTimer.getBoundingClientRect();
+  const margin = 8;
+  const maxX = Math.max(margin, window.innerWidth - rect.width - margin);
+  const maxY = Math.max(margin, window.innerHeight - rect.height - margin);
+  return {
+    x: Math.min(maxX, Math.max(margin, position.x)),
+    y: Math.min(maxY, Math.max(margin, position.y)),
+  };
+}
+
+function applyFloatingTimerPosition() {
+  if (!app.floatingTimerPosition) {
+    floatingTimer.style.left = "";
+    floatingTimer.style.top = "";
+    floatingTimer.style.right = "";
+    floatingTimer.style.bottom = "";
+    return;
+  }
+
+  const position = clampFloatingTimerPosition(app.floatingTimerPosition);
+  app.floatingTimerPosition = position;
+  floatingTimer.style.left = `${position.x}px`;
+  floatingTimer.style.top = `${position.y}px`;
+  floatingTimer.style.right = "auto";
+  floatingTimer.style.bottom = "auto";
+}
+
+function cycleFloatingTimerPosition() {
+  const rect = floatingTimer.getBoundingClientRect();
+  const margin = 14;
+  const positions = [
+    { x: window.innerWidth - rect.width - margin, y: margin },
+    { x: margin, y: margin },
+    { x: margin, y: window.innerHeight - rect.height - margin },
+    { x: window.innerWidth - rect.width - margin, y: window.innerHeight - rect.height - margin },
+  ];
+  const current = app.floatingTimerPosition
+    ? clampFloatingTimerPosition(app.floatingTimerPosition)
+    : { x: window.innerWidth - rect.width - margin, y: window.innerHeight - rect.height - margin };
+  const currentIndex = positions.findIndex((position) => (
+    Math.abs(position.x - current.x) < 24 && Math.abs(position.y - current.y) < 24
+  ));
+  app.floatingTimerPosition = clampFloatingTimerPosition(positions[(currentIndex + 1) % positions.length]);
+  applyFloatingTimerPosition();
+  statusText.textContent = text("timerPositionMoved");
+  save();
+}
+
 function render() {
   const target = getTarget();
   const step = getStep();
@@ -2106,6 +2309,7 @@ function render() {
       : text("startTimer");
   document.body.classList.toggle("timer-countdown", timerModeSelect.value === "countdown");
   document.body.classList.toggle("timer-active", app.timerRunning);
+  applyFloatingTimerPosition();
   timerModeSelect.disabled = app.timerRunning;
   countdownMinutesInput.disabled = app.timerRunning;
   countdownSecondsInput.disabled = app.timerRunning;
@@ -2117,22 +2321,24 @@ function render() {
     timeValue.textContent = displayTime;
     floatingTimeValue.textContent = displayTime;
   }
+  renderBreakReminder();
+  renderHabitStamp();
   applyLanguage();
 
   historyList.innerHTML = "";
   app.history.slice(0, 8).forEach((item, index) => {
     const listItem = document.createElement("li");
-    const text = document.createElement("span");
+    const historyText = document.createElement("span");
     const deleteButton = document.createElement("button");
 
-    text.textContent = typeof item === "string" ? item : item.text;
+    historyText.textContent = typeof item === "string" ? item : item.text;
     deleteButton.className = "delete-history-button";
     deleteButton.type = "button";
     deleteButton.textContent = "×";
     deleteButton.setAttribute("aria-label", text("deleteHistoryLabel"));
     deleteButton.dataset.historyIndex = index;
 
-    listItem.append(text, deleteButton);
+    listItem.append(historyText, deleteButton);
     historyList.appendChild(listItem);
   });
 }
@@ -2155,6 +2361,114 @@ function notifyUser() {
   gain.connect(audioContext.destination);
   oscillator.start();
   oscillator.stop(audioContext.currentTime + 0.12);
+}
+
+function getBreakDuration() {
+  return Math.max(1, safeNumber(breakMinutesSelect.value, 15)) * 60 * 1000;
+}
+
+function getBreakRemaining() {
+  if (!app.breakReminderRunning) return app.breakReminderDuration;
+  return Math.max(0, app.breakReminderDuration - (Date.now() - app.breakReminderStartedAt));
+}
+
+function formatBreakRemaining(milliseconds) {
+  const totalSeconds = Math.ceil(milliseconds / 1000);
+  return {
+    minutes: Math.floor(totalSeconds / 60),
+    seconds: String(totalSeconds % 60).padStart(2, "0"),
+  };
+}
+
+function renderBreakReminder() {
+  breakToggleButton.textContent = app.breakReminderRunning ? text("stopBreakReminder") : text("startBreakReminder");
+  breakMinutesSelect.disabled = app.breakReminderRunning;
+  if (!app.breakReminderRunning) {
+    breakStatusText.textContent = text("breakIdle");
+    return;
+  }
+
+  const remaining = formatBreakRemaining(getBreakRemaining());
+  breakStatusText.textContent = text("breakRunning", remaining);
+}
+
+function updateBreakReminder() {
+  if (!app.breakReminderRunning) return;
+  renderBreakReminder();
+  breakFrameId = setTimeout(updateBreakReminder, 500);
+}
+
+function startBreakReminder() {
+  app.breakReminderDuration = getBreakDuration();
+  app.breakReminderStartedAt = Date.now();
+  app.breakReminderRunning = true;
+  clearTimeout(breakTimerId);
+  clearTimeout(breakFrameId);
+  breakTimerId = setTimeout(finishBreakReminder, app.breakReminderDuration);
+  updateBreakReminder();
+  addHistory(text("breakStartHistory", { minutes: breakMinutesSelect.value }), { type: "break" });
+  save();
+  render();
+}
+
+function stopBreakReminder(message = text("breakStopHistory")) {
+  app.breakReminderRunning = false;
+  clearTimeout(breakTimerId);
+  clearTimeout(breakFrameId);
+  statusText.textContent = message;
+  addHistory(message, { type: "break" });
+  save();
+  render();
+}
+
+function finishBreakReminder() {
+  app.breakReminderRunning = false;
+  clearTimeout(breakTimerId);
+  clearTimeout(breakFrameId);
+  statusText.textContent = text("breakDone");
+  addHistory(text("breakDoneHistory"), { type: "break" });
+  notifyUser();
+  render();
+}
+
+function getHabitStreak() {
+  const dates = [...new Set(app.habitDates)].sort().reverse();
+  let streak = 0;
+  let cursor = new Date(`${getTodayKey()}T00:00:00`);
+
+  for (const date of dates) {
+    const cursorKey = cursor.toLocaleDateString("sv-SE");
+    if (date !== cursorKey) break;
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return streak;
+}
+
+function renderHabitStamp() {
+  const today = getTodayKey();
+  const stamped = app.habitDates.includes(today);
+  habitTodayValue.textContent = stamped ? text("habitDone") : text("habitNotYet");
+  habitStreakValue.textContent = text("habitStreakUnit", { days: getHabitStreak() });
+  habitStampButton.disabled = stamped;
+  habitStatusText.textContent = stamped ? text("habitAlready") : text("habitIdle");
+}
+
+function stampHabitToday() {
+  const today = getTodayKey();
+  if (app.habitDates.includes(today)) {
+    statusText.textContent = text("habitAlready");
+    renderHabitStamp();
+    return;
+  }
+
+  app.habitDates.push(today);
+  app.habitDates = [...new Set(app.habitDates)].sort().slice(-90);
+  statusText.textContent = text("habitStamped");
+  addHistory(text("habitStamped"), { type: "habit" });
+  save();
+  render();
 }
 
 function addHistory(message, details = {}) {
@@ -2346,7 +2660,7 @@ function updateTimer() {
   }
 
   if (app.timerRunning) {
-    app.timerFrameId = requestAnimationFrame(updateTimer);
+    app.timerFrameId = setTimeout(updateTimer, 100);
   }
 }
 
@@ -2372,7 +2686,7 @@ function startTimer() {
 function stopTimer() {
   app.elapsedBeforeStart = getElapsedTime();
   app.timerRunning = false;
-  cancelAnimationFrame(app.timerFrameId);
+  clearTimeout(app.timerFrameId);
   if (stopAutoWithTimerToggle.checked && app.autoRunning) {
     stopAutoCount(text("timerStopAuto"));
   }
@@ -2388,7 +2702,7 @@ function finishCountdown() {
   const completedDuration = getCountdownDuration();
   app.elapsedBeforeStart = getCountdownDuration();
   app.timerRunning = false;
-  cancelAnimationFrame(app.timerFrameId);
+  clearTimeout(app.timerFrameId);
   timeValue.textContent = "00:00.0";
   statusText.textContent = text("timerDone");
   addHistory(text("countdownDoneHistory", { time: formatTime(completedDuration), count: app.count, memo: getMemoText() }), { type: "timer" });
@@ -2516,6 +2830,83 @@ function startHold(button, amount) {
   });
 }
 
+function enableFloatingTimerDrag() {
+  let dragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+  let lastTouchAt = 0;
+
+  function getDragPoint(event) {
+    if (event.touches?.length) {
+      return event.touches[0];
+    }
+    if (event.changedTouches?.length) {
+      return event.changedTouches[0];
+    }
+    return event;
+  }
+
+  function canDragFloatingTimer() {
+    return window.getComputedStyle(floatingTimer).display !== "none";
+  }
+
+  function startDrag(event) {
+    if (event.type.startsWith("touch")) {
+      const now = Date.now();
+      if (now - lastTouchAt < 320) {
+        lastTouchAt = now;
+        cycleFloatingTimerPosition();
+        event.preventDefault();
+        return;
+      }
+      lastTouchAt = now;
+    }
+    if (event.type === "mousedown" && Date.now() - lastTouchAt < 700) return;
+    if (!canDragFloatingTimer()) return;
+    if (dragging) return;
+    const point = getDragPoint(event);
+    const rect = floatingTimer.getBoundingClientRect();
+    dragging = true;
+    offsetX = point.clientX - rect.left;
+    offsetY = point.clientY - rect.top;
+    floatingTimer.classList.add("dragging");
+    document.body.classList.add("timer-dragging");
+    event.preventDefault();
+  }
+
+  function moveDrag(event) {
+    if (!dragging) return;
+    const point = getDragPoint(event);
+    app.floatingTimerPosition = clampFloatingTimerPosition({
+      x: point.clientX - offsetX,
+      y: point.clientY - offsetY,
+    });
+    applyFloatingTimerPosition();
+    event.preventDefault();
+  }
+
+  function endDrag(event) {
+    if (!dragging) return;
+    dragging = false;
+    floatingTimer.classList.remove("dragging");
+    document.body.classList.remove("timer-dragging");
+    save();
+  }
+
+  floatingTimer.addEventListener("touchstart", startDrag, { passive: false });
+  document.addEventListener("touchmove", moveDrag, { passive: false });
+  document.addEventListener("touchend", endDrag);
+  document.addEventListener("touchcancel", endDrag);
+  floatingTimer.addEventListener("pointerdown", startDrag);
+  document.addEventListener("pointermove", moveDrag);
+  document.addEventListener("pointerup", endDrag);
+  document.addEventListener("pointercancel", endDrag);
+  floatingTimer.addEventListener("mousedown", startDrag);
+  document.addEventListener("mousemove", moveDrag);
+  document.addEventListener("mouseup", endDrag);
+  floatingTimer.addEventListener("dblclick", cycleFloatingTimerPosition);
+}
+
 plusButton.addEventListener("click", () => {
   if (plusButton.dataset.skipClick === "true") {
     plusButton.dataset.skipClick = "false";
@@ -2576,7 +2967,7 @@ timerResetButton.addEventListener("click", () => {
   app.timerRunning = false;
   app.elapsedBeforeStart = 0;
   countdownWarned = false;
-  cancelAnimationFrame(app.timerFrameId);
+  clearTimeout(app.timerFrameId);
   if (stopAutoWithTimerToggle.checked && app.autoRunning) {
     stopAutoCount(text("timerResetAuto"));
   }
@@ -2584,6 +2975,27 @@ timerResetButton.addEventListener("click", () => {
   addHistory(timerModeSelect.value === "countdown" ? text("countdownReset") : text("timerResetHistory"), { type: "timer" });
   render();
 });
+
+breakToggleButton.addEventListener("click", () => {
+  if (app.breakReminderRunning) {
+    stopBreakReminder();
+    return;
+  }
+  startBreakReminder();
+});
+
+breakResetButton.addEventListener("click", () => {
+  app.breakReminderRunning = false;
+  app.breakReminderDuration = getBreakDuration();
+  clearTimeout(breakTimerId);
+  clearTimeout(breakFrameId);
+  statusText.textContent = text("breakResetHistory");
+  addHistory(text("breakResetHistory"), { type: "break" });
+  save();
+  render();
+});
+
+habitStampButton.addEventListener("click", stampHabitToday);
 
 lapButton.addEventListener("click", () => {
   const timerStatus = app.timerRunning ? text("lapRunning") : text("lapStopped");
@@ -2707,10 +3119,20 @@ languageSelect.addEventListener("change", () => {
   render();
 });
 
-[countModeSelect, stepInput, targetInput, limitInput, limitModeSelect, timerModeSelect, countdownMinutesInput, countdownSecondsInput, intervalInput, memoInput, stopAutoWithTimerToggle, autoCountToggle, soundToggle, vibrateToggle].forEach((input) => {
+window.addEventListener("resize", () => {
+  if (!app.floatingTimerPosition) return;
+  app.floatingTimerPosition = clampFloatingTimerPosition(app.floatingTimerPosition);
+  applyFloatingTimerPosition();
+  save();
+});
+
+[countModeSelect, stepInput, targetInput, limitInput, limitModeSelect, timerModeSelect, countdownMinutesInput, countdownSecondsInput, breakMinutesSelect, intervalInput, memoInput, stopAutoWithTimerToggle, autoCountToggle, soundToggle, vibrateToggle].forEach((input) => {
   input.addEventListener("input", () => {
     if ((input === timerModeSelect || input === countdownMinutesInput || input === countdownSecondsInput) && !app.timerRunning) {
       app.elapsedBeforeStart = 0;
+    }
+    if (input === breakMinutesSelect && !app.breakReminderRunning) {
+      app.breakReminderDuration = getBreakDuration();
     }
     save();
     render();
@@ -2718,6 +3140,9 @@ languageSelect.addEventListener("change", () => {
   input.addEventListener("change", () => {
     if ((input === timerModeSelect || input === countdownMinutesInput || input === countdownSecondsInput) && !app.timerRunning) {
       app.elapsedBeforeStart = 0;
+    }
+    if (input === breakMinutesSelect && !app.breakReminderRunning) {
+      app.breakReminderDuration = getBreakDuration();
     }
     save();
     render();
@@ -2740,6 +3165,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 load();
+enableFloatingTimerDrag();
 render();
 
     </script>
